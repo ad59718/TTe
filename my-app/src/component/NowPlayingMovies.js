@@ -1,35 +1,35 @@
-// src/component/NowPlayingMovies.js
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { fetchNowPlayingMovies } from './redux/MovieSlice';
+import { Row, Spinner } from 'react-bootstrap';
+import MovieCard from './MovieCard';
 
 const NowPlayingMovies = () => {
-  const dispatch = useDispatch();
-  const { movies, loading, error } = useSelector((state) => state.movies);
+    const dispatch = useDispatch();
+    const { nowPlayingMovies, loading, error } = useSelector((state) => state.movies);
 
-  useEffect(() => {
-    dispatch(fetchNowPlayingMovies()); // 컴포넌트 마운트 시 영화 데이터 불러오기
-  }, [dispatch]);
+    useEffect(() => {
+        dispatch(fetchNowPlayingMovies());
+      }, [dispatch]);
 
-  return (
-    <div>
-      <h1>Now Playing Movies</h1>
-      {loading && <p>Loading...</p>}
-      {error && <p>Error: {error}</p>}
-      <ul>
-        {movies.length > 0 ? (
-          movies.map((movie) => (
-            <li key={movie.id}>
-              <h2>{movie.title}</h2>
-              <p>{movie.overview}</p>
-            </li>
-          ))
-        ) : (
-          <p>No movies available</p>
-        )}
-      </ul>
-    </div>
-  );
-};
+    if (loading) {
+        return <div className="text-center"><Spinner animation="border" /></div>;
+      }
+    
+      if (error) {
+        return <p className="text-danger">Error: {error}</p>;
+      }
+    
+      return (
+        <div>
+          <h3>현재 상영 영화</h3>
+          <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            {nowPlayingMovies.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </Row>
+        </div>
+      );
+}
 
 export default NowPlayingMovies;

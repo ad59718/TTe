@@ -1,62 +1,106 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// createAsyncThunk로 비동기 작업을 처리할 수 있도록 함
+const API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5OTg2Y2JjYTkwZjhkYjJhNmJjNTlhYTU1MTMxY2E4OCIsIm5iZiI6MTczNDc2MDU0NC40NTI5OTk4LCJzdWIiOiI2NzY2NTg2MDhjYTUzY2M2YTc1ZTA4MjAiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.RdwyecsrEBt67CkwShVQaNday5HOE7ai7QcSW2Xg94g';
+
+// 현재 상영 영화 가져오기
 export const fetchNowPlayingMovies = createAsyncThunk(
   'movies/fetchNowPlaying',
   async (_, thunkAPI) => {
-    const url = 'https://api.themoviedb.org/3/movie/now_playing?language=ko&page=1&region=KR';
-    const options = {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5OTg2Y2JjYTkwZjhkYjJhNmJjNTlhYTU1MTMxY2E4OCIsIm5iZiI6MTczNDc2MDU0NC40NTI5OTk4LCJzdWIiOiI2NzY2NTg2MDhjYTUzY2M2YTc1ZTA4MjAiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.RdwyecsrEBt67CkwShVQaNday5HOE7ai7QcSW2Xg94g',
-      },
-    };
-
     try {
-      const response = await axios(url, options);
-      return response.data.results; // 영화 데이터 반환
+      const response = await axios.get(
+        'https://api.themoviedb.org/3/movie/now_playing?language=ko&page=1&region=KR',
+        {
+          headers: {
+            accept: 'application/json',
+            Authorization: `Bearer ${API_KEY}`,
+          },
+        }
+      );
+      return response.data.results;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message); // 오류 처리
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
+// 모든 영화 가져오기 (페이지네이션 포함)
+export const fetchAllMovies = createAsyncThunk(
+  'movies/fetchAll',
+  async (page = 1, thunkAPI) => {
+    try {
+      const response = await axios.get(
+        `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=ko-KR&page=${page}&sort_by=popularity.desc`,
+        {
+          headers: {
+            accept: 'application/json',
+            Authorization: `Bearer ${API_KEY}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+
 const movieSlice = createSlice({
   name: 'movies',
   initialState: {
-    movies: [], // 모든 영화 데이터
+    nowPlayingMovies: [],
+    allMovies: [],
     loading: false,
     error: null,
-    searchResult: null, // 검색 결과 저장
+    searchResult: null,
+    currentPage: 1,
+    totalPages: 1,
   },
   reducers: {
-    // Search 리듀서
     searchMovieByTitle: (state, action) => {
-      const searchTitle = action.payload.toLowerCase(); // 검색어를 소문자로 변환
-      const movie = state.movies.find((movie) =>
-        movie.title.toLowerCase() === searchTitle
+      const searchTitle = action.payload.toLowerCase();
+      const targetMovies = state.searchResult ? state.searchResult : state.nowPlayingMovies;
+      state.searchResult = targetMovies.filter(movie =>
+        movie.title.toLowerCase().includes(searchTitle)
       );
-      state.searchResult = movie || null; // 검색된 영화 저장 (없으면 null)
+    },
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+    clearSearchResult: (state) => {
+      state.searchResult = null;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchNowPlayingMovies.pending, (state) => {
         state.loading = true;
-        state.error = null; // 에러 초기화
+        state.error = null;
       })
       .addCase(fetchNowPlayingMovies.fulfilled, (state, action) => {
         state.loading = false;
-        state.movies = action.payload; // API 응답 데이터를 상태에 저장
+        state.nowPlayingMovies = action.payload;
       })
       .addCase(fetchNowPlayingMovies.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload; // 오류 메시지 상태 저장
+        state.error = action.payload;
+      })
+      .addCase(fetchAllMovies.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllMovies.fulfilled, (state, action) => {
+        state.loading = false;
+        state.allMovies = action.payload.results;
+        state.totalPages = action.payload.total_pages;
+      })
+      .addCase(fetchAllMovies.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { searchMovieByTitle } = movieSlice.actions; // Search 리듀서 액션 내보내기
+export const { searchMovieByTitle, setCurrentPage, clearSearchResult } = movieSlice.actions;
 export default movieSlice.reducer;
