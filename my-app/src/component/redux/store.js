@@ -1,10 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import movieReducer from './redux/MovieSlice';
+import movieReducer from './MovieSlice'; // MovieSlice.js 경로 확인
 
-// 스토어 설정
 const store = configureStore({
   reducer: {
-    movies: movieReducer,
+    movies: movieReducer, // Redux 슬라이스 등록
   },
 });
 

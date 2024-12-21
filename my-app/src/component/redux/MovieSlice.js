@@ -1,4 +1,4 @@
-import { createSlice,createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // createAsyncThunk로 비동기 작업을 처리할 수 있도록 함
@@ -26,11 +26,21 @@ export const fetchNowPlayingMovies = createAsyncThunk(
 const movieSlice = createSlice({
   name: 'movies',
   initialState: {
-    movies: [],
+    movies: [], // 모든 영화 데이터
     loading: false,
     error: null,
+    searchResult: null, // 검색 결과 저장
   },
-  reducers: {},
+  reducers: {
+    // Search 리듀서
+    searchMovieByTitle: (state, action) => {
+      const searchTitle = action.payload.toLowerCase(); // 검색어를 소문자로 변환
+      const movie = state.movies.find((movie) =>
+        movie.title.toLowerCase() === searchTitle
+      );
+      state.searchResult = movie || null; // 검색된 영화 저장 (없으면 null)
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchNowPlayingMovies.pending, (state) => {
@@ -48,4 +58,5 @@ const movieSlice = createSlice({
   },
 });
 
+export const { searchMovieByTitle } = movieSlice.actions; // Search 리듀서 액션 내보내기
 export default movieSlice.reducer;
