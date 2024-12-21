@@ -1,19 +1,13 @@
-import { BrowserRouter} from 'react-router-dom';
-import './App.css';
-import { useState } from 'react';
+// src/App.js
+import React from 'react';
+import NowPlayingMovies from './component/NowPlayingMovies';
 
-const AppRouter = () => {
-  const [user, setUser] = useState({username:'',
-    password:'',admin: false
-  });
-}
-
-function App() {
+const App = () => {
   return (
-    <BrowserRouter>
-      <AppRouter/>
-    </BrowserRouter>
+    <div>
+      <h1>Movie App</h1>
+    </div>
   );
-}
+};
 
 export default App;
